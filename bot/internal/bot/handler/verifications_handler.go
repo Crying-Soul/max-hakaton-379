@@ -35,17 +35,17 @@ func (h *VerificationsHandler) EnterState(ctx context.Context, update schemes.Up
 		return h.sendMessage(ctx, update, "Не удалось загрузить историю заявок. Попробуйте позже.", nil)
 	}
 
-	status := translateVerificationStatusPtr(organizer.VerificationStatus)
+	//status := translateVerificationStatusPtr(organizer.VerificationStatus)
 
 	var builder strings.Builder
 	builder.WriteString("Статус организации: ")
-	builder.WriteString(status)
+	//builder.WriteString(status)
 	builder.WriteString("\n\n")
-	if organizer.RejectionReason != nil && *organizer.RejectionReason != "" {
-		builder.WriteString("Причина отклонения: ")
-		builder.WriteString(*organizer.RejectionReason)
-		builder.WriteString("\n\n")
-	}
+	// if organizer.RejectionReason != nil && *organizer.RejectionReason != "" {
+	// 	builder.WriteString("Причина отклонения: ")
+	// 	builder.WriteString(*organizer.RejectionReason)
+	// 	builder.WriteString("\n\n")
+	// }
 	builder.WriteString(formatVerificationHistory(history))
 
 	hasPending := len(history) > 0 && strings.EqualFold(history[0].Status, "pending")

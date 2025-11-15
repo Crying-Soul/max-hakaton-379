@@ -45,9 +45,9 @@ func (h *VerificationHandler) EnterState(ctx context.Context, update schemes.Upd
 		builder.WriteString("\n\n")
 	}
 
-	status := translateVerificationStatusPtr(or.VerificationStatus)
+	//status := translateVerificationStatusPtr(or.VerificationStatus)
 	builder.WriteString("Текущий статус: ")
-	builder.WriteString(status)
+	//builder.WriteString(status)
 	builder.WriteString("\n\n")
 
 	var latest *model.OrganizerVerificationRequest

@@ -36,11 +36,11 @@ func (h *EditVerificationHandler) EnterState(ctx context.Context, update schemes
 		builder.WriteString(organizer.OrganizationName)
 	}
 	builder.WriteString("\nКонтакты: ")
-	if organizer.Contacts == nil || *organizer.Contacts == "" {
-		builder.WriteString("—")
-	} else {
-		builder.WriteString(*organizer.Contacts)
-	}
+	// if organizer.Contacts == nil || *organizer.Contacts == "" {
+	// 	builder.WriteString("—")
+	// } else {
+	// 	builder.WriteString(*organizer.Contacts)
+	// }
 	builder.WriteString("\n\nОтправьте сообщение в формате:\n")
 	builder.WriteString("1 строка — название организации.\n")
 	builder.WriteString("Остальной текст — контакты, ссылки и комментарии.\n")

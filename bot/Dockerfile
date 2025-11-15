@@ -46,7 +46,7 @@ COPY --chown=bot:bot certs /app/certs
 
 # Копирование .env файла (если существует)
 # В production рекомендуется передавать переменные через docker-compose или secrets
-COPY --chown=bot:bot .env* /app/
+#COPY --chown=bot:bot .env* /app/
 
 # Смена пользователя на non-root для безопасности
 USER bot
