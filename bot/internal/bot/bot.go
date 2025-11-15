@@ -66,6 +66,9 @@ func (b *Bot) handleUpdate(ctx context.Context, update schemes.UpdateInterface) 
 	case *schemes.MessageCreatedUpdate:
 		username = upd.Message.Sender.Username
 		name = upd.Message.Sender.Name
+	case *schemes.BotStartedUpdate:
+		username = upd.User.Username
+		name = upd.User.Name
 	default:
 		log.Printf("Unknown update type: %T", update)
 		return

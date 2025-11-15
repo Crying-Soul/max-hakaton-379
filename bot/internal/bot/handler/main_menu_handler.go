@@ -21,7 +21,6 @@ func NewMainMenuHandler(services *di.Services) *MainMenuHandler {
 
 func (h *MainMenuHandler) EnterState(ctx context.Context, update schemes.UpdateInterface, transition fsm.Transition, params map[string]string) error {
 	keyboard := &maxbot.Keyboard{}
-	userID := update.GetUserID()
 
 	keyboard.AddRow().AddCallback("Мои события", schemes.DEFAULT, fsm.MainMenuToEvents.String())
 
@@ -31,9 +30,10 @@ func (h *MainMenuHandler) EnterState(ctx context.Context, update schemes.UpdateI
 	keyboard.AddRow().AddCallback("Заявки", schemes.DEFAULT, fsm.MainMenuToApplications.String())
 	keyboard.AddRow().AddCallback("О себе", schemes.DEFAULT, fsm.MainMenuToAbout.String())
 	keyboard.AddRow().AddCallback("Верификация", schemes.DEFAULT, fsm.MainMenuToVerifications.String())
+	keyboard.AddRow().AddCallback("Назад", schemes.DEFAULT, fsm.MainMenuToSelectRole.String())
 
 	msg := maxbot.NewMessage().
-		SetUser(userID).
+		SetUser(update.GetUserID()).
 		SetText("Главное меню:").
 		AddKeyboard(keyboard)
 

@@ -24,7 +24,7 @@ Table admins {
 
 Table volunteers {
   id bigint [pk, ref: - users.id]
-  cv text
+  about text
   search_radius int [default: 10]
   category_ids int[]
 
@@ -35,31 +35,21 @@ Table volunteers {
 
 Table organizers {
   id bigint [pk, ref: - users.id]
+  about text
   organization_name text [not null]
-  verification_status text [default: 'pending']
-  rejection_reason text
-  contacts text
   verified_at timestamp
   verified_by bigint [ref: > admins.id]
   created_at timestamp [default: `now()`]
   updated_at timestamp [default: `now()`]
-  
-  Indexes {
-    verification_status
-  }
+
 }
 
 Table categories {
   id serial [pk]
   name text [unique, not null]
-  description text
-  is_active boolean [default: true]
   created_at timestamp [default: `now()`]
-  
-  Indexes {
-    is_active
-  }
 }
+
 
 Table events {
   id serial [pk]
@@ -73,10 +63,9 @@ Table events {
   location_lon decimal(11,8) [not null]
   category_id int [ref: > categories.id]
   organizer_id bigint [ref: > organizers.id]
-  contacts text
   max_volunteers int [not null]
   current_volunteers int [default: 0]
-  status text [default: 'open']
+  status text [default: 'active', note: 'active|completed|cancelled']
   cancelled_reason text
   completed_at timestamp
   created_at timestamp [default: `now()`]
@@ -96,7 +85,7 @@ Table volunteer_applications {
   id serial [pk]
   event_id int [ref: > events.id]
   volunteer_id bigint [ref: > volunteers.id]
-  status text [default: 'pending']
+  status text [default: 'pending', note: 'pending|approved|rejected|cancelled']
   rejection_reason text
   reviewed_by bigint [ref: > organizers.id]
   applied_at timestamp [default: `now()`]
@@ -130,6 +119,7 @@ Table event_media {
   id serial [pk]
   event_id int [ref: > events.id ]
   token text [not null]
+  local_path text [not null]
   uploaded_at timestamp [default: `now()`]
   uploaded_by bigint [ref: > users.id]
 }

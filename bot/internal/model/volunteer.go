@@ -4,7 +4,7 @@ package model
 // Соответствует таблице volunteers.
 type Volunteer struct {
 	ID           int64
-	CV           *string
+	About        *string
 	SearchRadius *int32
 	CategoryIDs  []int32
 }

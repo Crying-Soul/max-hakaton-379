@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"maxBot/internal/di"
 	"maxBot/internal/fsm"
+	"maxBot/internal/model"
 	"slices"
 	"strconv"
 
@@ -23,22 +24,31 @@ func NewEventsHandler(services *di.Services) *EventsHandler {
 // EnterState обрабатывает вход в состояние (вызывается после перехода)
 func (h *EventsHandler) EnterState(ctx context.Context, update schemes.UpdateInterface, transition fsm.Transition, params map[string]string) error {
 	keyboard := &maxbot.Keyboard{}
-
-	keyboard.AddRow().
-		AddCallback("Фильтр по категориям", schemes.DEFAULT, fsm.EventsToCategoriesFilter.String()).
-		AddCallback("Фильтр по геолокации", schemes.DEFAULT, fsm.EventsToGeoFilter.String())
-
 	page, err := strconv.Atoi(params["page"])
 	if err != nil {
 		return err
 	}
 
 	limit := int32(8)
-	offset := int32(page-1) * limit // страницы начинаются с 1, поэтому offset = (page-1) * limit
+	offset := int32(page-1) * limit
 
-	events, _ := h.services.EventService.ListAvailableEventsForVolunteer(ctx, update.GetUserID(), limit, offset)
+	// Get volunteer's category filter
+	var categoryIDs []int32
+	if user, err := h.services.UserService.GetUserByID(ctx, update.GetUserID()); err == nil && user.Role == "volunteer" {
+		if volunteer, err := h.services.VolunteerService.GetVolunteer(ctx, user.ID); err == nil {
+			categoryIDs = volunteer.CategoryIDs
+		}
+	}
 
-	count, err := h.services.EventService.CountAvailableEventsForVolunteer(ctx, update.GetUserID())
+	var events []model.Event
+	var count int64
+	if len(categoryIDs) > 0 {
+		events, _ = h.services.EventService.ListAvailableEventsForVolunteerWithCategories(ctx, update.GetUserID(), categoryIDs, limit, offset)
+		count, err = h.services.EventService.CountAvailableEventsForVolunteerWithCategories(ctx, update.GetUserID(), categoryIDs)
+	} else {
+		events, _ = h.services.EventService.ListAvailableEventsForVolunteer(ctx, update.GetUserID(), limit, offset)
+		count, err = h.services.EventService.CountAvailableEventsForVolunteer(ctx, update.GetUserID())
+	}
 	if err != nil {
 		return err
 	}
@@ -49,7 +59,11 @@ func (h *EventsHandler) EnterState(ctx context.Context, update schemes.UpdateInt
 		keyboard.AddRow().AddCallback(event.Title, schemes.DEFAULT, eventPayload)
 	}
 
-	totalPages := int((count + int64(limit) - 1) / int64(limit)) // ceil division
+	keyboard.AddRow().
+		AddCallback("Фильтр категорий", schemes.DEFAULT, fsm.EventsToCategoriesFilter.String()).
+		AddCallback("Фильтр геолокации", schemes.DEFAULT, fsm.EventsToGeoFilter.String())
+
+	totalPages := int((count + int64(limit) - 1) / int64(limit))
 
 	row := keyboard.AddRow()
 
@@ -66,6 +80,18 @@ func (h *EventsHandler) EnterState(ctx context.Context, update schemes.UpdateInt
 		nextPayload := EncodePayload(fsm.Loop, map[string]string{"page": nextPageStr})
 		row.AddCallback(">>", schemes.DEFAULT, nextPayload)
 	}
+
+	// Добавляем кнопку "Назад" в зависимости от того, откуда пришли
+	switch transition {
+	case fsm.PersonalEventsToEvents:
+		keyboard.AddRow().AddCallback("Назад", schemes.DEFAULT, fsm.EventsToPersonalEvents.String())
+	case fsm.CategoriesFilterToEvents, fsm.GeoFilterToEvents:
+		// Возвращаемся на ту же страницу Events, показывая кнопки фильтров выше
+		// Не добавляем дополнительную кнопку "Назад"
+	case fsm.MainMenuToEvents:
+		keyboard.AddRow().AddCallback("Назад", schemes.DEFAULT, fsm.EventsToMainMenu.String())
+	}
+
 	msg := maxbot.NewMessage().
 		SetUser(update.GetUserID()).
 		SetText("События:").

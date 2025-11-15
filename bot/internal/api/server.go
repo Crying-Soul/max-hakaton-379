@@ -60,7 +60,8 @@ func NewServer(cfg RestConfig, services *di.Services, validator *auth.Validator)
 
 // Run запускает HTTPS сервер и блокирует выполнение.
 func (s *Server) Run() error {
-	return s.http.ListenAndServeTLS(s.cfg.TLSCertFile, s.cfg.TLSKeyFile)
+	return s.http.ListenAndServe()
+	// return s.http.ListenAndServeTLS(s.cfg.TLSCertFile, s.cfg.TLSKeyFile)
 }
 
 // Shutdown останавливает сервер с graceful shutdown.

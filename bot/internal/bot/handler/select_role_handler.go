@@ -2,15 +2,12 @@ package handler
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"slices"
-	"strings"
 
 	"maxBot/internal/di"
 	"maxBot/internal/fsm"
 
-	"github.com/jackc/pgx/v5"
 	maxbot "github.com/rectid/max-bot-api-client-go"
 	"github.com/rectid/max-bot-api-client-go/schemes"
 )
@@ -67,34 +64,7 @@ func (h *SelectRoleHandler) LeaveState(ctx context.Context, update schemes.Updat
 		if err != nil {
 			return fsm.Error, nil, fmt.Errorf("failed to update user role: %w", err)
 		}
-		if role == "organizer" {
-			if err := h.ensureOrganizer(ctx, update.GetUserID()); err != nil {
-				return fsm.Error, nil, err
-			}
-		}
 		return event, params, nil
 	}
 	return fsm.Error, nil, fmt.Errorf("неверный ответ")
-}
-
-func (h *SelectRoleHandler) ensureOrganizer(ctx context.Context, userID int64) error {
-	_, err := h.services.OrganizerService.GetOrganizer(ctx, userID)
-	if err == nil {
-		return nil
-	}
-	if !errors.Is(err, pgx.ErrNoRows) {
-		return fmt.Errorf("не удалось проверить статус организатора: %w", err)
-	}
-	user, err := h.services.UserService.GetUserByID(ctx, userID)
-	if err != nil {
-		return fmt.Errorf("не удалось получить данные пользователя: %w", err)
-	}
-	name := strings.TrimSpace(user.Name)
-	if name == "" {
-		name = fmt.Sprintf("Организация %d", userID)
-	}
-	if _, err := h.services.OrganizerService.CreateOrganizer(ctx, userID, name); err != nil {
-		return fmt.Errorf("не удалось создать запись организатора: %w", err)
-	}
-	return nil
 }

@@ -13,7 +13,8 @@ type VolunteerService interface {
 	UpsertVolunteer(ctx context.Context, volunteer model.Volunteer) (model.Volunteer, error)
 	DeleteVolunteer(ctx context.Context, id int64) error
 	GetVolunteer(ctx context.Context, id int64) (model.Volunteer, error)
-	UpdateVolunteerProfile(ctx context.Context, id int64, cv *string, searchRadius *int32) (model.Volunteer, error)
+	UpdateVolunteerProfile(ctx context.Context, id int64, about *string, searchRadius *int32) (model.Volunteer, error)
+	UpdateVolunteerSearchRadius(ctx context.Context, id int64, searchRadius *int32) (model.Volunteer, error)
 	UpdateVolunteerCategories(ctx context.Context, id int64, categoryIDs []int32) (model.Volunteer, error)
 	ListVolunteers(ctx context.Context, limit, offset int32) ([]model.Volunteer, error)
 	ListVolunteersByCategory(ctx context.Context, categoryID int32, limit, offset int32) ([]model.Volunteer, error)
@@ -31,7 +32,7 @@ func NewVolunteerService(q dbsqlc.Querier) VolunteerService {
 func (s *volunteerService) CreateVolunteer(ctx context.Context, id int64) (model.Volunteer, error) {
 	params := dbsqlc.CreateVolunteerParams{
 		ID:           id,
-		Cv:           stringPtrToText(nil),
+		About:        stringPtrToText(nil),
 		SearchRadius: int32PtrToInt4(nil),
 		CategoryIds:  nil,
 	}
@@ -45,7 +46,7 @@ func (s *volunteerService) CreateVolunteer(ctx context.Context, id int64) (model
 func (s *volunteerService) UpsertVolunteer(ctx context.Context, volunteer model.Volunteer) (model.Volunteer, error) {
 	params := dbsqlc.UpsertVolunteerParams{
 		ID:           volunteer.ID,
-		Cv:           stringPtrToText(volunteer.CV),
+		About:        stringPtrToText(volunteer.About),
 		SearchRadius: int32PtrToInt4(volunteer.SearchRadius),
 		CategoryIds:  volunteer.CategoryIDs,
 	}
@@ -68,13 +69,25 @@ func (s *volunteerService) GetVolunteer(ctx context.Context, id int64) (model.Vo
 	return mapVolunteer(v), nil
 }
 
-func (s *volunteerService) UpdateVolunteerProfile(ctx context.Context, id int64, cv *string, searchRadius *int32) (model.Volunteer, error) {
+func (s *volunteerService) UpdateVolunteerProfile(ctx context.Context, id int64, about *string, searchRadius *int32) (model.Volunteer, error) {
 	params := dbsqlc.UpdateVolunteerProfileParams{
 		ID:           id,
-		Cv:           stringPtrToText(cv),
+		About:        stringPtrToText(about),
 		SearchRadius: int32PtrToInt4(searchRadius),
 	}
 	v, err := s.q.UpdateVolunteerProfile(ctx, params)
+	if err != nil {
+		return model.Volunteer{}, err
+	}
+	return mapVolunteer(v), nil
+}
+
+func (s *volunteerService) UpdateVolunteerSearchRadius(ctx context.Context, id int64, searchRadius *int32) (model.Volunteer, error) {
+	params := dbsqlc.UpdateVolunteerSearchRadiusParams{
+		ID:           id,
+		SearchRadius: int32PtrToInt4(searchRadius),
+	}
+	v, err := s.q.UpdateVolunteerSearchRadius(ctx, params)
 	if err != nil {
 		return model.Volunteer{}, err
 	}

@@ -1,12 +1,12 @@
 -- name: CreateVolunteer :one
 INSERT INTO volunteers (
     id,
-    cv,
+    about,
     search_radius,
     category_ids
 ) VALUES (
     sqlc.arg(id),
-    sqlc.arg(cv),
+    sqlc.arg(about),
     COALESCE(sqlc.arg(search_radius), 10),
     sqlc.arg(category_ids)
 )
@@ -15,18 +15,18 @@ RETURNING *;
 -- name: UpsertVolunteer :one
 INSERT INTO volunteers (
     id,
-    cv,
+    about,
     search_radius,
     category_ids
 ) VALUES (
     sqlc.arg(id),
-    sqlc.arg(cv),
+    sqlc.arg(about),
     COALESCE(sqlc.arg(search_radius), 10),
     sqlc.arg(category_ids)
 )
 ON CONFLICT (id) DO UPDATE
 SET
-    cv = EXCLUDED.cv,
+    about = EXCLUDED.about,
     search_radius = EXCLUDED.search_radius,
     category_ids = EXCLUDED.category_ids
 RETURNING *;
@@ -49,7 +49,14 @@ WHERE v.id = sqlc.arg(id);
 -- name: UpdateVolunteerProfile :one
 UPDATE volunteers
 SET
-    cv = sqlc.arg(cv),
+    about = sqlc.arg(about),
+    search_radius = sqlc.arg(search_radius)
+WHERE id = sqlc.arg(id)
+RETURNING *;
+
+-- name: UpdateVolunteerSearchRadius :one
+UPDATE volunteers
+SET
     search_radius = sqlc.arg(search_radius)
 WHERE id = sqlc.arg(id)
 RETURNING *;

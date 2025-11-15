@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"strings"
 
 	dbsqlc "maxBot/internal/db/sqlc"
 	"maxBot/internal/model"
@@ -69,6 +70,12 @@ func (s *userService) UpsertUser(ctx context.Context, user model.User) (model.Us
 	if err != nil {
 		return model.User{}, err
 	}
+
+	// Синхронизируем запись в таблице для конкретной роли
+	if err := s.syncRoleSpecificTable(ctx, user.ID, user.Role); err != nil {
+		return model.User{}, err
+	}
+
 	return mapUser(u)
 }
 
@@ -191,6 +198,12 @@ func (s *userService) UpdateUserRole(ctx context.Context, id int64, role string)
 	if err != nil {
 		return model.User{}, err
 	}
+
+	// Синхронизируем запись в таблице для конкретной роли
+	if err := s.syncRoleSpecificTable(ctx, id, role); err != nil {
+		return model.User{}, err
+	}
+
 	return mapUser(u)
 }
 
@@ -225,6 +238,54 @@ func (s *userService) BlockUser(ctx context.Context, id int64) error {
 
 func (s *userService) UnblockUser(ctx context.Context, id int64) error {
 	return s.q.UnblockUser(ctx, id)
+}
+
+// syncRoleSpecificTable синхронизирует запись в таблице volunteers или organizers
+// в зависимости от роли пользователя. Использует upsert для безопасного создания/обновления.
+func (s *userService) syncRoleSpecificTable(ctx context.Context, userID int64, role string) error {
+	switch role {
+	case "volunteer":
+		// Создаем или обновляем запись в таблице volunteers
+		params := dbsqlc.UpsertVolunteerParams{
+			ID:           userID,
+			About:        stringPtrToText(nil), // пустое описание по умолчанию
+			SearchRadius: int32PtrToInt4(nil),  // будет 10 по умолчанию в БД
+			CategoryIds:  nil,                  // пустой массив категорий
+		}
+		_, err := s.q.UpsertVolunteer(ctx, params)
+		return err
+
+	case "organizer":
+		// Создаем или обновляем запись в таблице organizers
+		params := dbsqlc.UpsertOrganizerParams{
+			ID:               userID,
+			OrganizationName: "Не указано", // заглушка, пользователь заполнит позже
+			About:            stringPtrToText(nil),
+			VerifiedAt:       timePtrToTimestamp(nil),
+			VerifiedBy:       int64PtrToInt8(nil),
+		}
+		_, err := s.q.UpsertOrganizer(ctx, params)
+		return err
+
+	case "admin":
+		// Для админов создаем запись в таблице admins
+		// Используем простой INSERT, игнорируя ошибку если запись уже существует
+		_, err := s.q.CreateAdmin(ctx, userID)
+		if err != nil {
+			// Проверяем, не является ли ошибка дубликатом ключа
+			// В случае конфликта просто игнорируем (запись уже существует)
+			if strings.Contains(err.Error(), "duplicate key") ||
+				strings.Contains(err.Error(), "unique constraint") {
+				return nil
+			}
+			return err
+		}
+		return nil
+
+	default:
+		// Для неизвестных ролей ничего не делаем
+		return nil
+	}
 }
 
 var _ UserService = (*userService)(nil)

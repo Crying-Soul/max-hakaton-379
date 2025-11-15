@@ -18,11 +18,7 @@ func newAuthHandler(validator *auth.Validator) *authHandler {
 }
 
 func (h *authHandler) register(r *gin.RouterGroup) {
-	r.POST("/auth/session", h.createSession)
-}
-
-type sessionRequest struct {
-	InitData string `json:"initData"`
+	r.GET("/auth/session", h.createSession)
 }
 
 type sessionResponse struct {
@@ -32,13 +28,7 @@ type sessionResponse struct {
 }
 
 func (h *authHandler) createSession(c *gin.Context) {
-	var req sessionRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		c.JSON(http.StatusBadRequest, errorResponse{Message: "initData обязателен"})
-		return
-	}
-
-	initData := strings.TrimSpace(req.InitData)
+	initData := strings.TrimSpace(c.Query("session"))
 	if initData == "" {
 		c.JSON(http.StatusBadRequest, errorResponse{Message: "initData обязателен"})
 		return

@@ -103,7 +103,7 @@ FROM events
 WHERE id = sqlc.arg(id);
 
 -- name: GetEventWithOrganizer :one
-SELECT e.*, o.organization_name, o.verification_status
+SELECT e.*, o.organization_name
 FROM events e
 JOIN organizers o ON o.id = e.organizer_id
 WHERE e.id = sqlc.arg(id);
@@ -143,6 +143,45 @@ WHERE e.status = 'open'
 SELECT *
 FROM events e
 WHERE e.status = 'open'
+  AND NOT EXISTS (
+    SELECT 1
+    FROM volunteer_applications va
+    WHERE va.event_id = e.id
+      AND va.volunteer_id = sqlc.arg(volunteer_id)
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM event_participants ep
+    WHERE ep.event_id = e.id
+      AND ep.volunteer_id = sqlc.arg(volunteer_id)
+  )
+ORDER BY e.date DESC, e.id DESC
+LIMIT sqlc.arg('limit')::int
+OFFSET sqlc.arg('offset')::int;
+
+-- name: CountAvailableEventsForVolunteerWithCategories :one
+SELECT COUNT(*)
+FROM events e
+WHERE e.status = 'open'
+  AND (sqlc.arg(category_ids) IS NULL OR array_length(sqlc.arg(category_ids), 1) = 0 OR e.category_id = ANY(sqlc.arg(category_ids)))
+  AND NOT EXISTS (
+    SELECT 1
+    FROM volunteer_applications va
+    WHERE va.event_id = e.id
+      AND va.volunteer_id = sqlc.arg(volunteer_id)
+  )
+  AND NOT EXISTS (
+    SELECT 1
+    FROM event_participants ep
+    WHERE ep.event_id = e.id
+      AND ep.volunteer_id = sqlc.arg(volunteer_id)
+  );
+
+-- name: ListAvailableEventsForVolunteerWithCategories :many
+SELECT *
+FROM events e
+WHERE e.status = 'open'
+  AND (sqlc.arg(category_ids) IS NULL OR array_length(sqlc.arg(category_ids), 1) = 0 OR e.category_id = ANY(sqlc.arg(category_ids)))
   AND NOT EXISTS (
     SELECT 1
     FROM volunteer_applications va

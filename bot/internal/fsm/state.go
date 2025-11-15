@@ -37,12 +37,20 @@ const (
 	MainMenuToVerifications
 
 	PersonalEventsToEvents
+	PersonalEventsToMainMenu
 
 	EventsToCategoriesFilter
 	EventsToGeoFilter
 	EventsToEvent
+	EventsToMainMenu
+	EventsToPersonalEvents
+	EventToEvents
+
+	CategoriesFilterToEvents
 
 	GeoFilterToEditGeoFilter
+	GeoFilterToEvents
+	EditGeoFilterToGeoFilter
 
 	VerificationsToVerification
 	VerificationToReplyVerification

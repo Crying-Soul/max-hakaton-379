@@ -15,19 +15,18 @@ import (
 
 // Router управляет маршрутизацией между FSM и хендлерами
 type Router struct {
-	services                 *di.Services
-	handlers                 map[fsm.State]handler.Handler
-	emptyHandler             *handler.EmptyHandler
-	newUserHandler           *handler.NewUserHandler
-	selectRoleHandler        *handler.SelectRoleHandler
-	mainMenuHandler          *handler.MainMenuHandler
-	eventsHandler            *handler.EventsHandler
-	verificationsHandler     *handler.VerificationsHandler
-	verificationHandler      *handler.VerificationHandler
-	replyVerificationHandler *handler.ReplyVerificationHandler
-	editVerificationHandler  *handler.EditVerificationHandler
-	// aboutHandler          *handler.AboutHandler
-	// applicationsHandler   *handler.ApplicationsHandler
+	services              *di.Services
+	handlers              map[fsm.State]handler.Handler
+	emptyHandler          *handler.EmptyHandler
+	newUserHandler        *handler.NewUserHandler
+	selectRoleHandler     *handler.SelectRoleHandler
+	mainMenuHandler       *handler.MainMenuHandler
+	eventsHandler         *handler.EventsHandler
+	eventHandler          *handler.EventHandler
+	personalEventsHandler *handler.PersonalEventsHandler
+	categoryFilterHandler *handler.CategoryFilterHandler
+	geoFilterHandler      *handler.GeoFilterHandler
+	editGeoFilterHandler  *handler.EditGeoFilterHandler
 }
 
 // NewRouter создаёт новый роутер с инициализированными хендлерами
@@ -42,24 +41,22 @@ func NewRouter(services *di.Services) *Router {
 	r.selectRoleHandler = handler.NewSelectRoleHandler(services)
 	r.mainMenuHandler = handler.NewMainMenuHandler(services)
 	r.eventsHandler = handler.NewEventsHandler(services)
-	r.verificationsHandler = handler.NewVerificationsHandler(services)
-	r.verificationHandler = handler.NewVerificationHandler(services)
-	r.replyVerificationHandler = handler.NewReplyVerificationHandler(services)
-	r.editVerificationHandler = handler.NewEditVerificationHandler(services)
-	// r.aboutHandler = handler.NewAboutHandler(services)
-	// r.applicationsHandler = handler.NewApplicationsHandler(services)
+	r.eventHandler = handler.NewEventHandler(services)
+	r.personalEventsHandler = handler.NewPersonalEventsHandler(services)
+	r.categoryFilterHandler = handler.NewCategoryFilterHandler(services)
+	r.geoFilterHandler = handler.NewGeoFilterHandler(services)
+	r.editGeoFilterHandler = handler.NewEditGeoFilterHandler(services)
 
 	r.handlers[fsm.Empty] = r.emptyHandler
 	r.handlers[fsm.NewUser] = r.newUserHandler
 	r.handlers[fsm.SelectRole] = r.selectRoleHandler
 	r.handlers[fsm.MainMenu] = r.mainMenuHandler
-	// r.handlers[fsm.About] = r.aboutHandler
-	// r.handlers[fsm.Applications] = r.applicationsHandler
 	r.handlers[fsm.Events] = r.eventsHandler
-	r.handlers[fsm.Verifications] = r.verificationsHandler
-	r.handlers[fsm.Verification] = r.verificationHandler
-	r.handlers[fsm.ReplyVerification] = r.replyVerificationHandler
-	r.handlers[fsm.EditVerification] = r.editVerificationHandler
+	r.handlers[fsm.Event] = r.eventHandler
+	r.handlers[fsm.PersonalEvents] = r.personalEventsHandler
+	r.handlers[fsm.CategoriesFilter] = r.categoryFilterHandler
+	r.handlers[fsm.GeoFilter] = r.geoFilterHandler
+	r.handlers[fsm.EditGeoFilter] = r.editGeoFilterHandler
 	return r
 }
 

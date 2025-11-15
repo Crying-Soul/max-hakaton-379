@@ -13,6 +13,7 @@ import (
 
 	"maxBot/internal/api"
 	"maxBot/internal/auth"
+	internal "maxBot/internal/bot"
 	"maxBot/internal/di"
 	"maxBot/internal/repository"
 )
@@ -86,16 +87,13 @@ func main() {
 		}
 	}()
 
-	// bot, err := internal.NewBot(ctx, services)
-	// if err != nil {
-	// 	log.Fatalf("Failed to create bot: %v", err)
-	// }
-	// defer bot.Close()
-
-	// bot.Start(ctx)
-
-	// log.Println("Bot stopped")
-
-	for {
+	bot, err := internal.NewBot(ctx, services)
+	if err != nil {
+		log.Fatalf("Failed to create bot: %v", err)
 	}
+	defer bot.Close()
+
+	bot.Start(ctx)
+
+	log.Println("Bot stopped")
 }

@@ -58,3 +58,8 @@ WHERE name ILIKE CONCAT('%', sqlc.arg(query), '%')
 ORDER BY name
 LIMIT sqlc.arg('limit')::int
 OFFSET sqlc.arg('offset')::int;
+
+-- name: CountActiveCategories :one
+SELECT COUNT(*)
+FROM categories
+WHERE is_active = TRUE;

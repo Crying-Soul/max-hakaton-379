@@ -20,6 +20,8 @@ type EventService interface {
 	IncrementEventVolunteers(ctx context.Context, id int32, delta int32) (int32, error)
 	CountAvailableEventsForVolunteer(ctx context.Context, volunteerID int64) (int64, error)
 	ListAvailableEventsForVolunteer(ctx context.Context, volunteerID int64, limit, offset int32) ([]model.Event, error)
+	ListAvailableEventsForVolunteerWithCategories(ctx context.Context, volunteerID int64, categoryIDs []int32, limit, offset int32) ([]model.Event, error)
+	CountAvailableEventsForVolunteerWithCategories(ctx context.Context, volunteerID int64, categoryIDs []int32) (int64, error)
 	ListEvents(ctx context.Context, limit, offset int32) ([]model.Event, error)
 	ListEventsByOrganizer(ctx context.Context, organizerID int64, limit, offset int32) ([]model.Event, error)
 	ListEventsByStatus(ctx context.Context, status string, limit, offset int32) ([]model.Event, error)
@@ -174,6 +176,28 @@ func (s *eventService) ListAvailableEventsForVolunteer(ctx context.Context, volu
 		return nil, err
 	}
 	return mapEvents(items)
+}
+
+func (s *eventService) ListAvailableEventsForVolunteerWithCategories(ctx context.Context, volunteerID int64, categoryIDs []int32, limit, offset int32) ([]model.Event, error) {
+	params := dbsqlc.ListAvailableEventsForVolunteerWithCategoriesParams{
+		VolunteerID: int64ToInt8(volunteerID),
+		CategoryIds: categoryIDs,
+		Limit:       limit,
+		Offset:      offset,
+	}
+	items, err := s.q.ListAvailableEventsForVolunteerWithCategories(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	return mapEvents(items)
+}
+
+func (s *eventService) CountAvailableEventsForVolunteerWithCategories(ctx context.Context, volunteerID int64, categoryIDs []int32) (int64, error) {
+	params := dbsqlc.CountAvailableEventsForVolunteerWithCategoriesParams{
+		VolunteerID: int64ToInt8(volunteerID),
+		CategoryIds: categoryIDs,
+	}
+	return s.q.CountAvailableEventsForVolunteerWithCategories(ctx, params)
 }
 
 func (s *eventService) ListEvents(ctx context.Context, limit, offset int32) ([]model.Event, error) {

@@ -55,7 +55,7 @@ func mapAdmin(a dbsqlc.Admin) model.Admin {
 func mapVolunteer(v dbsqlc.Volunteer) model.Volunteer {
 	return model.Volunteer{
 		ID:           v.ID,
-		CV:           textToPtr(v.Cv),
+		About:        textToPtr(v.About),
 		SearchRadius: int4ToPtr(v.SearchRadius),
 		CategoryIDs:  copyInt32s(v.CategoryIds),
 	}
@@ -78,15 +78,13 @@ func mapOrganizer(o dbsqlc.Organizer) (model.Organizer, error) {
 	verifiedAt := timestampToPtr(o.VerifiedAt)
 	verifiedBy := int8ToPtr(o.VerifiedBy)
 	return model.Organizer{
-		ID:                 o.ID,
-		OrganizationName:   o.OrganizationName,
-		VerificationStatus: textToPtr(o.VerificationStatus),
-		RejectionReason:    textToPtr(o.RejectionReason),
-		Contacts:           textToPtr(o.Contacts),
-		VerifiedAt:         verifiedAt,
-		VerifiedBy:         verifiedBy,
-		CreatedAt:          timestampToTime(o.CreatedAt),
-		UpdatedAt:          timestampToTime(o.UpdatedAt),
+		ID:               o.ID,
+		OrganizationName: o.OrganizationName,
+		About:            textToPtr(o.About),
+		VerifiedAt:       verifiedAt,
+		VerifiedBy:       verifiedBy,
+		CreatedAt:        timestampToTime(o.CreatedAt),
+		UpdatedAt:        timestampToTime(o.UpdatedAt),
 	}, nil
 }
 

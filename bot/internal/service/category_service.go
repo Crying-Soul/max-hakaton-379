@@ -17,6 +17,7 @@ type CategoryService interface {
 	ListCategories(ctx context.Context, limit, offset int32) ([]model.Category, error)
 	ListActiveCategories(ctx context.Context, limit, offset int32) ([]model.Category, error)
 	SearchCategories(ctx context.Context, searchQuery string, limit, offset int32) ([]model.Category, error)
+	CountActiveCategories(ctx context.Context) (int64, error)
 }
 
 type categoryService struct {
@@ -115,6 +116,10 @@ func (s *categoryService) SearchCategories(ctx context.Context, searchQuery stri
 		return nil, err
 	}
 	return mapCategories(items), nil
+}
+
+func (s *categoryService) CountActiveCategories(ctx context.Context) (int64, error) {
+	return s.q.CountActiveCategories(ctx)
 }
 
 var _ CategoryService = (*categoryService)(nil)

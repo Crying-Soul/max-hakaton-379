@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"errors"
-	"strings"
 	"time"
 
 	"github.com/jackc/pgx/v5"
@@ -19,10 +18,11 @@ type OrganizerService interface {
 	UpsertOrganizer(ctx context.Context, organizer model.Organizer) (model.Organizer, error)
 	DeleteOrganizer(ctx context.Context, id int64) error
 	GetOrganizer(ctx context.Context, id int64) (model.Organizer, error)
-	UpdateOrganizerProfile(ctx context.Context, id int64, organizationName string, contacts *string) (model.Organizer, error)
-	SetOrganizerVerification(ctx context.Context, id int64, verificationStatus, rejectionReason *string, verifiedAt *time.Time, verifiedBy *int64) (model.Organizer, error)
+	UpdateOrganizerProfile(ctx context.Context, id int64, organizationName string, about *string) (model.Organizer, error)
+	SetOrganizerVerification(ctx context.Context, id int64, verifiedAt *time.Time, verifiedBy *int64) (model.Organizer, error)
 	ListOrganizers(ctx context.Context, limit, offset int32) ([]model.Organizer, error)
-	ListOrganizersByStatus(ctx context.Context, verificationStatus string, limit, offset int32) ([]model.Organizer, error)
+	ListVerifiedOrganizers(ctx context.Context, limit, offset int32) ([]model.Organizer, error)
+	ListUnverifiedOrganizers(ctx context.Context, limit, offset int32) ([]model.Organizer, error)
 	ListOrganizerVerificationHistory(ctx context.Context, organizerID int64, limit, offset int32) ([]model.OrganizerVerificationRequest, error)
 	CreateOrganizerVerificationRequest(ctx context.Context, organizerID int64, status string, comment *string) (model.OrganizerVerificationRequest, error)
 }
@@ -38,13 +38,11 @@ func NewOrganizerService(q dbsqlc.Querier, api *maxbot.Api) OrganizerService {
 
 func (s *organizerService) CreateOrganizer(ctx context.Context, id int64, organizationName string) (model.Organizer, error) {
 	params := dbsqlc.CreateOrganizerParams{
-		ID:                 id,
-		OrganizationName:   organizationName,
-		VerificationStatus: nil, // будет "pending" по умолчанию
-		RejectionReason:    stringPtrToText(nil),
-		Contacts:           stringPtrToText(nil),
-		VerifiedAt:         timePtrToTimestamp(nil),
-		VerifiedBy:         int64PtrToInt8(nil),
+		ID:               id,
+		OrganizationName: organizationName,
+		About:            stringPtrToText(nil),
+		VerifiedAt:       timePtrToTimestamp(nil),
+		VerifiedBy:       int64PtrToInt8(nil),
 	}
 	o, err := s.q.CreateOrganizer(ctx, params)
 	if err != nil {
@@ -55,13 +53,11 @@ func (s *organizerService) CreateOrganizer(ctx context.Context, id int64, organi
 
 func (s *organizerService) UpsertOrganizer(ctx context.Context, organizer model.Organizer) (model.Organizer, error) {
 	params := dbsqlc.UpsertOrganizerParams{
-		ID:                 organizer.ID,
-		OrganizationName:   organizer.OrganizationName,
-		VerificationStatus: organizer.VerificationStatus,
-		RejectionReason:    stringPtrToText(organizer.RejectionReason),
-		Contacts:           stringPtrToText(organizer.Contacts),
-		VerifiedAt:         timePtrToTimestamp(organizer.VerifiedAt),
-		VerifiedBy:         int64PtrToInt8(organizer.VerifiedBy),
+		ID:               organizer.ID,
+		OrganizationName: organizer.OrganizationName,
+		About:            stringPtrToText(organizer.About),
+		VerifiedAt:       timePtrToTimestamp(organizer.VerifiedAt),
+		VerifiedBy:       int64PtrToInt8(organizer.VerifiedBy),
 	}
 	o, err := s.q.UpsertOrganizer(ctx, params)
 	if err != nil {
@@ -82,11 +78,11 @@ func (s *organizerService) GetOrganizer(ctx context.Context, id int64) (model.Or
 	return mapOrganizer(o)
 }
 
-func (s *organizerService) UpdateOrganizerProfile(ctx context.Context, id int64, organizationName string, contacts *string) (model.Organizer, error) {
+func (s *organizerService) UpdateOrganizerProfile(ctx context.Context, id int64, organizationName string, about *string) (model.Organizer, error) {
 	params := dbsqlc.UpdateOrganizerProfileParams{
 		ID:               id,
 		OrganizationName: organizationName,
-		Contacts:         stringPtrToText(contacts),
+		About:            stringPtrToText(about),
 	}
 	o, err := s.q.UpdateOrganizerProfile(ctx, params)
 	if err != nil {
@@ -95,36 +91,19 @@ func (s *organizerService) UpdateOrganizerProfile(ctx context.Context, id int64,
 	return mapOrganizer(o)
 }
 
-func (s *organizerService) SetOrganizerVerification(ctx context.Context, id int64, verificationStatus, rejectionReason *string, verifiedAt *time.Time, verifiedBy *int64) (model.Organizer, error) {
+func (s *organizerService) SetOrganizerVerification(ctx context.Context, id int64, verifiedAt *time.Time, verifiedBy *int64) (model.Organizer, error) {
 	params := dbsqlc.SetOrganizerVerificationParams{
-		ID:                 id,
-		VerificationStatus: stringPtrToText(verificationStatus),
-		RejectionReason:    stringPtrToText(rejectionReason),
-		VerifiedAt:         timePtrToTimestamp(verifiedAt),
-		VerifiedBy:         int64PtrToInt8(verifiedBy),
+		ID:         id,
+		VerifiedAt: timePtrToTimestamp(verifiedAt),
+		VerifiedBy: int64PtrToInt8(verifiedBy),
 	}
 	o, err := s.q.SetOrganizerVerification(ctx, params)
 	if err != nil {
 		return model.Organizer{}, err
 	}
-	statusPtr := textToPtr(o.VerificationStatus)
-	statusValue := "pending"
-	if statusPtr != nil {
-		statusValue = *statusPtr
-	}
-	_, err = s.q.CreateOrganizerVerificationRequest(ctx, dbsqlc.CreateOrganizerVerificationRequestParams{
-		OrganizerID:      id,
-		Status:           statusValue,
-		OrganizerComment: stringPtrToText(nil),
-		AdminComment:     stringPtrToText(rejectionReason),
-		ReviewedBy:       int64PtrToInt8(verifiedBy),
-		ReviewedAt:       timePtrToTimestamp(verifiedAt),
-	})
-	if err != nil {
-		return model.Organizer{}, err
-	}
 
-	if verificationStatus != nil && s.api != nil && strings.EqualFold(*verificationStatus, "approved") {
+	// Отправляем уведомление о верификации
+	if verifiedAt != nil && s.api != nil {
 		msg := maxbot.NewMessage().
 			SetUser(id).
 			SetText("Ваша организация успешно прошла верификацию! Теперь вам доступен полный функционал организатора.")
@@ -147,13 +126,24 @@ func (s *organizerService) ListOrganizers(ctx context.Context, limit, offset int
 	return mapOrganizers(items)
 }
 
-func (s *organizerService) ListOrganizersByStatus(ctx context.Context, verificationStatus string, limit, offset int32) ([]model.Organizer, error) {
-	params := dbsqlc.ListOrganizersByStatusParams{
-		Status: stringToText(verificationStatus),
+func (s *organizerService) ListVerifiedOrganizers(ctx context.Context, limit, offset int32) ([]model.Organizer, error) {
+	params := dbsqlc.ListVerifiedOrganizersParams{
 		Limit:  limit,
 		Offset: offset,
 	}
-	items, err := s.q.ListOrganizersByStatus(ctx, params)
+	items, err := s.q.ListVerifiedOrganizers(ctx, params)
+	if err != nil {
+		return nil, err
+	}
+	return mapOrganizers(items)
+}
+
+func (s *organizerService) ListUnverifiedOrganizers(ctx context.Context, limit, offset int32) ([]model.Organizer, error) {
+	params := dbsqlc.ListUnverifiedOrganizersParams{
+		Limit:  limit,
+		Offset: offset,
+	}
+	items, err := s.q.ListUnverifiedOrganizers(ctx, params)
 	if err != nil {
 		return nil, err
 	}

@@ -3,8 +3,7 @@ version: "2"
 sql:
   - engine: "postgresql"
     schema:
-      - "db/migrations/20251113000001_create_schema.up.sql"
-      - "db/migrations/20251115090000_add_verification_history.up.sql"
+      - "db/migrations"
     queries:
       - "db/sqlc/queries"
     gen:
