@@ -26,21 +26,18 @@ VITE_API_URL=http://localhost:8080
 HTTP_ALLOWED_ORIGINS=http://localhost:5173
 Запустите проект
 
-bash
+```bash
 docker-compose up -d
+```
 Запустите тестовые данные
 
-Для локального запуска:
-
-bash
-chmod +x ./scripts/seed_mock_data.sh
-./scripts/seed_mock_data.sh
 Если скрипт не работает локально (требуется psql):
 
-bash
+```bash
 docker cp ./scripts/seed_mock_data.sh maxbot_postgres:/tmp/
 docker exec maxbot_postgres chmod +x /tmp/seed_mock_data.sh
 docker exec -e DATABASE_URL='postgres://postgres:postgres@localhost:5432/maxbot?sslmode=disable' -e ENV_FILE='' maxbot_postgres /tmp/seed_mock_data.sh
+```
 Доступ к сервисам
 Frontend: http://localhost:5173
 
@@ -52,48 +49,51 @@ PostgreSQL: localhost:5432
 Основные команды
 bash
 # Запуск всех сервисов
+```bash
 docker-compose up -d
-
+```
 # Остановка всех сервисов
+```bash
 docker-compose down
-
+```
 # Перезапуск сервисов
+```bash
 docker-compose restart
-
+```
 # Просмотр логов
+```bash
 docker-compose logs -f bot
 docker-compose logs -f frontend
-
+```
 # Статус контейнеров
+```bash
 docker-compose ps
-Мониторинг и отладка
-bash
-# Просмотр всех логов в реальном времени
-docker-compose logs -f
+```
 
-# Проверка использования ресурсов
-docker-compose stats
 
-# Пересборка образов
-docker-compose up -d --build
+Моковые данные для фронтенда
+Чтобы фронт быстро увидел карту, используйте bash-скрипт scripts/seed_mock_data.sh, который через psql создаёт категории, пользователей, организаторов, волонтёров и события вокруг Петербурга.
 
-# Остановка с удалением volumes
-docker-compose down -v
-Тестовые данные
-Скрипт scripts/seed_mock_data.sh заполняет базу данных тестовыми данными:
+Локальный запуск
+Запустите Postgres (например, docker compose up) и убедитесь, что DATABASE_URL в .env указывает на нужную БД.
 
-Категории мероприятий
-
-Пользователей и организаторов
-
-Волонтеров
-
-События вокруг Санкт-Петербурга
-
-Связи между сущностями
-
-Для перезаполнения данных просто запустите скрипт повторно:
-
-bash
+Выполните:
+```bash
 ./scripts/seed_mock_data.sh
-База данных
+```
+
+Скрипт прочитает .env, очистит старые сиды через временную таблицу и зальёт актуальные данные. Повторный запуск безопасен — значения просто перезапишутся.
+
+Запуск внутри контейнера Postgres
+Если psql не установлен локально, можно прогнать скрипт прямо в maxbot_postgres:
+```bash
+docker cp ./scripts/seed_mock_data.sh maxbot_postgres:/tmp/seed_mock_data.sh
+docker exec maxbot_postgres chmod +x /tmp/seed_mock_data.sh
+docker exec \
+  -e DATABASE_URL='postgres://postgres:postgres@localhost:5432/maxbot?sslmode=disable' \
+  -e ENV_FILE='' \
+  maxbot_postgres /tmp/seed_mock_data.sh
+```
+Важные параметры: DATABASE_URL обязателен даже внутри контейнера (используйте localhost:5432), а ENV_FILE='' отключает повторную загрузку .env.
+
+Скрипт сам создаёт связи (медиа, участники, счётчики), поэтому его удобно запускать перед демонстрациями, чтобы откатить тестовую базу к известному состоянию.
