@@ -1,3 +1,4 @@
+markdown
 # MaxBot Project
 
 Проект включает в себя бота и веб-интерфейс для управления мероприятиями.
@@ -12,8 +13,12 @@
 ### Установка и запуск
 
 1. **Настройте переменные окружения**
+
+   Создайте файл `.env` в корне проекта:
    ```bash
-Заполните .env файл:
+   cp env .env
+   nano .env
+Заполните файл следующими переменными:
 
 env
 TOKEN=your_bot_token_here
@@ -25,10 +30,12 @@ bash
 docker-compose up -d
 Запустите тестовые данные
 
+Для локального запуска:
+
 bash
 chmod +x ./scripts/seed_mock_data.sh
 ./scripts/seed_mock_data.sh
-Если скрипт не работает локально:
+Если скрипт не работает локально (требуется psql):
 
 bash
 docker cp ./scripts/seed_mock_data.sh maxbot_postgres:/tmp/
@@ -42,22 +49,51 @@ Backend API: http://localhost:8080
 PostgreSQL: localhost:5432
 
 Управление
+Основные команды
 bash
-# Запуск
+# Запуск всех сервисов
 docker-compose up -d
 
-# Остановка
+# Остановка всех сервисов
 docker-compose down
 
-# Перезапуск
+# Перезапуск сервисов
 docker-compose restart
 
-# Логи
+# Просмотр логов
 docker-compose logs -f bot
 docker-compose logs -f frontend
 
-# Статус
+# Статус контейнеров
 docker-compose ps
+Мониторинг и отладка
+bash
+# Просмотр всех логов в реальном времени
+docker-compose logs -f
+
+# Проверка использования ресурсов
+docker-compose stats
+
+# Пересборка образов
+docker-compose up -d --build
+
+# Остановка с удалением volumes
+docker-compose down -v
 Тестовые данные
-Скрипт scripts/seed_mock_data.sh заполняет базу:
-Для перезаполнения данных просто запустите скрипт повторно.
+Скрипт scripts/seed_mock_data.sh заполняет базу данных тестовыми данными:
+
+Категории мероприятий
+
+Пользователей и организаторов
+
+Волонтеров
+
+События вокруг Санкт-Петербурга
+
+Связи между сущностями
+
+Для перезаполнения данных просто запустите скрипт повторно:
+
+bash
+./scripts/seed_mock_data.sh
+База данных
