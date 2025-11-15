@@ -1,0 +1,3 @@
+DROP INDEX IF EXISTS idx_organizer_verification_requests_status;
+DROP INDEX IF EXISTS idx_organizer_verification_requests_organizer;
+DROP TABLE IF EXISTS organizer_verification_requests;

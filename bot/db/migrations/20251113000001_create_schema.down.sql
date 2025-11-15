@@ -1,0 +1,11 @@
+DROP TABLE IF EXISTS event_media;
+DROP TABLE IF EXISTS event_participants;
+DROP TABLE IF EXISTS volunteer_applications;
+DROP TABLE IF EXISTS events;
+DROP TABLE IF EXISTS categories;
+DROP TABLE IF EXISTS organizers;
+DROP TABLE IF EXISTS volunteers;
+DROP TABLE IF EXISTS admins;
+DROP TABLE IF EXISTS users;
+
+DROP EXTENSION IF EXISTS btree_gist;

@@ -1,0 +1,151 @@
+Table users {
+  id bigint [pk, note: 'Telegram ID']
+  username text
+  name text [not null]
+  role text [not null, note: 'volunteer, organizer, admin']
+  state text [not null, note: 'FSM state']
+  is_blocked boolean [default: false]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  location_lat decimal(10,8)
+  location_lon decimal(11,8)
+  Indexes {
+    role
+    state
+    is_blocked
+    (location_lon, location_lat) [type: gist]
+  }
+}
+
+Table admins {
+  id bigint [pk, ref: - users.id]
+  created_at timestamp [default: `now()`]
+}
+
+Table volunteers {
+  id bigint [pk, ref: - users.id]
+  cv text
+  search_radius int [default: 10]
+  category_ids int[]
+
+  Indexes {
+    category_ids [type: gin]
+  }
+}
+
+Table organizers {
+  id bigint [pk, ref: - users.id]
+  organization_name text [not null]
+  verification_status text [default: 'pending']
+  rejection_reason text
+  contacts text
+  verified_at timestamp
+  verified_by bigint [ref: > admins.id]
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Indexes {
+    verification_status
+  }
+}
+
+Table categories {
+  id serial [pk]
+  name text [unique, not null]
+  description text
+  is_active boolean [default: true]
+  created_at timestamp [default: `now()`]
+  
+  Indexes {
+    is_active
+  }
+}
+
+Table events {
+  id serial [pk]
+  title text [not null]
+  description text
+  chat bigint
+  date timestamp [not null]
+  duration_hours int
+  location text [not null]
+  location_lat decimal(10,8) [not null]
+  location_lon decimal(11,8) [not null]
+  category_id int [ref: > categories.id]
+  organizer_id bigint [ref: > organizers.id]
+  contacts text
+  max_volunteers int [not null]
+  current_volunteers int [default: 0]
+  status text [default: 'open']
+  cancelled_reason text
+  completed_at timestamp
+  created_at timestamp [default: `now()`]
+  updated_at timestamp [default: `now()`]
+  
+  Indexes {
+    organizer_id
+    status
+    date
+    category_id
+    (location_lon, location_lat) [type: gist]
+    (status, date)
+  }
+}
+
+Table volunteer_applications {
+  id serial [pk]
+  event_id int [ref: > events.id]
+  volunteer_id bigint [ref: > volunteers.id]
+  status text [default: 'pending']
+  rejection_reason text
+  reviewed_by bigint [ref: > organizers.id]
+  applied_at timestamp [default: `now()`]
+  reviewed_at timestamp
+  
+  Indexes {
+    event_id
+    volunteer_id
+    status
+    (volunteer_id, status)
+    (event_id, status)
+    (event_id, volunteer_id) [unique]
+  }
+}
+
+Table event_participants {
+  id serial [pk]
+  event_id int [ref: > events.id ]
+  volunteer_id bigint [ref: > volunteers.id ]
+  application_id int [ref: > volunteer_applications.id ]
+  joined_chat_at timestamp [default: `now()`]
+  
+  Indexes {
+    event_id
+    volunteer_id
+    (event_id, volunteer_id) [unique]
+  }
+}
+
+Table event_media {
+  id serial [pk]
+  event_id int [ref: > events.id ]
+  token text [not null]
+  uploaded_at timestamp [default: `now()`]
+  uploaded_by bigint [ref: > users.id]
+}
+
+Table organizer_verification_requests {
+  id serial [pk]
+  organizer_id bigint [not null, ref: > organizers.id]
+  status text [not null, default: 'pending', note: 'pending|approved|rejected|cancelled']
+  organizer_comment text
+  admin_comment text
+  reviewed_by bigint [ref: > admins.id]
+  submitted_at timestamp [default: `now()`]
+  reviewed_at timestamp
+
+  Indexes {
+    organizer_id
+    status
+  }
+}

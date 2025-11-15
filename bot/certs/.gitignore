@@ -1,0 +1,7 @@
+# Ignore private keys by default. Allow committing .crt if you need to share it.
+*.key
+*.pem
+
+# Keep generated cert files out of git unless you intentionally add them.
+server.key
+# If you want to commit cert for demo, remove the lines above or add an explicit allow rule.
