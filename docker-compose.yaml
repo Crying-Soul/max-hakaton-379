@@ -29,7 +29,7 @@ services:
     container_name: maxbot_app
     environment:
       # Переменные окружения для приложения
-      TOKEN: ./bot/${TOKEN}
+      TOKEN: ${TOKEN}
       DATABASE_URL: postgres://postgres:postgres@postgres:5432/maxbot?sslmode=disable
       MIGRATIONS_PATH: ${MIGRATIONS_PATH:-/app/db/migrations}
       HTTP_ADDR: ${HTTP_ADDR:-:8443}
